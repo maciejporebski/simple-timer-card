@@ -84,7 +84,7 @@ const TRANSLATIONS = {
     no_timers: "No Timers",
     click_to_start: "Click to start",
     no_active_timers: "No Active Timers",
-    active_timers: "",
+    active_timers: "  Timers",
     add: "Add",
     custom: "Custom",
     cancel: "Cancel",
@@ -297,14 +297,14 @@ class SimpleTimerCard extends i {
     if (!url || typeof url !== "string") return false;
     try {
       const parsed = new URL(url, window.location.origin);
-      return ["https:", "http:", "file:"].includes(parsed.protocol) || url.startsWith("/local/") || url.startsWith("/hacsfiles/");
+      return ["https:", "http:", "file:"].includes(parsed.protocol) || url.startsWith("/local/") || url.startsWith("/hacsfiles/") || url.startsWith("/media/");
     } catch {
       return false;
     }
   }
 
   _isLocalHassUrl(url) {
-    return url.startsWith("/local/") || url.startsWith("/hacsfiles/") || url.startsWith("/api/");
+    return url.startsWith("/local/") || url.startsWith("/hacsfiles/") || url.startsWith("/api/") || url.startsWith("/media/");
   }
 
   async _fetchAuthenticatedAudioUrl(url) {
