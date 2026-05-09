@@ -59,7 +59,7 @@ const TRANSLATIONS = {
     no_timers: "No Timers",
     click_to_start: "Click to start",
     no_active_timers: "No Active Timers",
-    active_timers: "  Timers",
+    active_timers: "Timers",
     add: "Add",
     custom: "Custom",
     cancel: "Cancel",
@@ -340,7 +340,7 @@ class SimpleTimerCard extends LitElement {
       activeFillOpen: false,
       activeBarOpen: false,
     };
-    this._customSecs = { horizontal: 15 * 60, vertical: 15 * 60 };
+    this._customSecs = { horizontal: 0, vertical: 0 };
     this._activeSecs = { fill: 10 * 60, bar: 10 * 60 };
     this._showingCustomName = {};
     this._lastSelectedName = {};
@@ -496,7 +496,7 @@ class SimpleTimerCard extends LitElement {
       mqtt: mqttConfig,
       time_format_units: timeUnits,
     };
-    const defaultDurationSecs = (parseInt(this._config.default_new_timer_duration_mins, 10) || 15) * 60;
+    const defaultDurationSecs = (parseInt(this._config.default_new_timer_duration_mins, 10) || 0) * 60;
     this._customSecs = { horizontal: defaultDurationSecs, vertical: defaultDurationSecs };
     this._activeSecs = { fill: defaultDurationSecs, bar: defaultDurationSecs };
     if (typeof this._config.timer_name_presets === "string") {
@@ -2502,7 +2502,7 @@ if (!audioEnabled || !audioFileUrl || !this._validateAudioUrl(audioFileUrl)) ret
     const input = this.shadowRoot?.getElementById(inputId);
     if (input && input.value) finalLabel = input.value.trim();
     this._createAndSaveTimer(secs, finalLabel);
-    const defaultDurationSecs = (parseInt(this._config.default_new_timer_duration_mins, 10) || 15) * 60;
+    const defaultDurationSecs = (parseInt(this._config.default_new_timer_duration_mins, 10) || 0) * 60;
     this._customSecs = { ...this._customSecs, [which]: defaultDurationSecs };
     const openKey = `noTimer${which.charAt(0).toUpperCase() + which.slice(1)}Open`;
     this._ui[openKey] = false;
@@ -2519,7 +2519,7 @@ if (!audioEnabled || !audioFileUrl || !this._validateAudioUrl(audioFileUrl)) ret
     const input = this.shadowRoot?.getElementById(inputId);
     if (input && input.value) finalLabel = input.value.trim();
     this._createAndSaveTimer(secs, finalLabel);
-    const defaultDurationSecs = (parseInt(this._config.default_new_timer_duration_mins, 10) || 15) * 60;
+    const defaultDurationSecs = (parseInt(this._config.default_new_timer_duration_mins, 10) || 0) * 60;
     this._activeSecs = { ...this._activeSecs, [which]: defaultDurationSecs };
     const openKey = `active${which.charAt(0).toUpperCase() + which.slice(1)}Open`;
     this._ui[openKey] = false;
@@ -3322,7 +3322,6 @@ const layout = this._config.layout;
       <div class="card ${this._ui.activeFillOpen ? "card-show" : ""}">
         ${this._config.show_active_header !== false ? html`
           <div class="active-head">
-            <h4>${this._localize("active_timers")}</h4>
             ${showPresetsInActive ? html`
               <div class="header-actions">
                 ${presets.map((preset) => {
@@ -3360,7 +3359,6 @@ const layout = this._config.layout;
       <div class="card ${this._ui.activeBarOpen ? "card-show" : ""}">
         ${this._config.show_active_header !== false ? html`
           <div class="active-head">
-            <h4>${this._localize("active_timers")}</h4>
             ${showPresetsInActive ? html`
               <div class="header-actions">
                 ${presets.map((preset) => {
