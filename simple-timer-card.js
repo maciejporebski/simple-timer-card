@@ -31,12 +31,12 @@ const t=globalThis,i$1=t=>t,s$1=t.trustedTypes,e=s$1?s$1.createPolicy("lit-html"
  *
  * Author: eyalgal
  * License: MIT
- * Version: 2.2.4
+ * Version: 2.2.5
  * For more information, visit: https://github.com/eyalgal/simple-timer-card
  */
 
 
-const cardVersion="2.2.4";
+const cardVersion="2.2.5";
 
 const DAY_IN_MS = 86400000;
 const YEAR_IN_MS = 365 * DAY_IN_MS;
@@ -84,7 +84,7 @@ const TRANSLATIONS = {
     no_timers: "No Timers",
     click_to_start: "Click to start",
     no_active_timers: "No Active Timers",
-    active_timers: "Active Timers",
+    active_timers: "",
     add: "Add",
     custom: "Custom",
     cancel: "Cancel",
@@ -300,6 +300,25 @@ class SimpleTimerCard extends i {
       return ["https:", "http:", "file:"].includes(parsed.protocol) || url.startsWith("/local/") || url.startsWith("/hacsfiles/");
     } catch {
       return false;
+    }
+  }
+
+  _isLocalHassUrl(url) {
+    return url.startsWith("/local/") || url.startsWith("/hacsfiles/") || url.startsWith("/api/");
+  }
+
+  async _fetchAuthenticatedAudioUrl(url) {
+    const token = this.hass?.auth?.data?.access_token;
+    if (!token) return url;
+    try {
+      const resp = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!resp.ok) return url;
+      const blob = await resp.blob();
+      return URL.createObjectURL(blob);
+    } catch {
+      return url;
     }
   }
 
@@ -1476,7 +1495,7 @@ class SimpleTimerCard extends i {
     }
   }
 
-  _playAudioNotification(timerId,timer){
+  async _playAudioNotification(timerId,timer){
     const entityId = timer?.source_entity || timer?.entity_id || timer?.id || null;
     const entityConf = this._getEntityConfig(entityId);
 
@@ -1519,7 +1538,11 @@ class SimpleTimerCard extends i {
 if (!audioEnabled || !audioFileUrl || !this._validateAudioUrl(audioFileUrl)) return;
     this._stopAudioForTimer(timerId);
     try {
-      const audio = new Audio(audioFileUrl);
+      const resolvedUrl = this._isLocalHassUrl(audioFileUrl)
+        ? await this._fetchAuthenticatedAudioUrl(audioFileUrl)
+        : audioFileUrl;
+      const isBlobUrl = resolvedUrl.startsWith("blob:");
+      const audio = new Audio(resolvedUrl);
       let playCount = 0;
       const maxPlays = audioPlayUntilDismissed ? Infinity : Math.max(1, Math.min(10, audioRepeatCount || 1));
       const playNext = () => {
@@ -1531,7 +1554,7 @@ if (!audioEnabled || !audioFileUrl || !this._validateAudioUrl(audioFileUrl)) ret
           this._stopAudioForTimer(timerId);
         }
       };
-      const audioData = { audio, playNext };
+      const audioData = { audio, playNext, blobUrl: isBlobUrl ? resolvedUrl : null };
       audio.addEventListener("ended", playNext);
       audio.addEventListener("error", () => this._stopAudioForTimer(timerId));
       this._activeAudioInstances.set(timerId, audioData);
@@ -1542,11 +1565,12 @@ if (!audioEnabled || !audioFileUrl || !this._validateAudioUrl(audioFileUrl)) ret
   _stopAudioForTimer(timerId) {
     const audioData = this._activeAudioInstances.get(timerId);
     if (audioData) {
-      const { audio, playNext } = audioData;
+      const { audio, playNext, blobUrl } = audioData;
       audio.removeEventListener("ended", playNext);
       audio.pause();
       audio.currentTime = 0;
       audio.src = "";
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
       this._activeAudioInstances.delete(timerId);
     }
   }
